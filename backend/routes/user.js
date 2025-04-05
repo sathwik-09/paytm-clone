@@ -3,8 +3,9 @@ const { z } = require("zod");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const router = express.Router();
-const User = require("../db");
+const { User, Account } = require("../db"); 
 const { authMiddleware } = require("../middleware");
+const { default: errorMap } = require("zod/locales/en.js");
 
 
 router.post("/signup", async (req, res) => {
@@ -31,15 +32,21 @@ router.post("/signup", async (req, res) => {
   
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
-    await User.create({
+    const user = await User.create({
       username: username,
       email: email,
       password: hashedPassword,
+    });
+    const userId = user._id;
+    await Account.create({
+      userId,
+      balance: 1 + Math.random() * 10000
     });
     res.json({
       message: "signup successful",
     });
   } catch (e) {
+    console.error(e);
     res.status(500).json({
       message: "Error while creating user",
     });
